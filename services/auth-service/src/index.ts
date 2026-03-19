@@ -1,10 +1,13 @@
 import Fastify from "fastify";
+import authRoutes from "./routes/auth.js";
 
 const app = Fastify({ logger: true });
 
 app.get("/health", async () => {
   return { status: "ok", service: "auth-service" };
 });
+
+app.register(authRoutes);
 
 const start = async () => {
   try {
