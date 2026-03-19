@@ -1,0 +1,76 @@
+version: "3.9"
+
+services:
+  traefik:
+    image: traefik:v2.11
+    command:
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --log.level=DEBUG
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - app-net
+
+  auth-service:
+    build: ./services/auth-service
+    container_name: auth-service
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.auth.rule=PathPrefix(`/auth`)
+      - traefik.http.services.auth.loadbalancer.server.port=3000
+      - traefik.http.middlewares.auth-strip.stripprefix.prefixes=/auth
+      - traefik.http.routers.auth.middlewares=auth-strip
+    networks:
+      - app-net
+
+  customer-service:
+    build: ./services/customer-service
+    container_name: customer-service
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.customers.rule=PathPrefix(`/customers`)
+      - traefik.http.services.customers.loadbalancer.server.port=3000
+      - traefik.http.middlewares.customers-strip.stripprefix.prefixes=/customers
+      - traefik.http.routers.customers.middlewares=customers-strip
+    networks:
+      - app-net
+
+  payments-service:
+    build: ./services/payments-service
+    container_name: payments-service
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.payments.rule=PathPrefix(`/payments`)
+      - traefik.http.services.payments.loadbalancer.server.port=3000
+      - traefik.http.middlewares.payments-strip.stripprefix.prefixes=/payments
+      - traefik.http.routers.payments.middlewares=payments-strip
+    networks:
+      - app-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppass
+      POSTGRES_DB: apigwlab
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-net
+
+networks:
+  app-net:
+
+volumes:
+  postgres_data:
