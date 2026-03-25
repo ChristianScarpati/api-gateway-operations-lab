@@ -19,3 +19,15 @@ Show practical knowledge related to:
 - monitoring
 - troubleshooting
 - technical documentation
+
+## How to run
+```bash
+docker compose up -d
+```
+or 
+docker compose up --build 
+
+## How to stop
+```bash
+docker compose down
+```

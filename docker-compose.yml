@@ -9,7 +9,8 @@ services:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:80
-      - --log.level=DEBUG
+      - --log.level=INFO
+      - --accesslog=true
       - --providers.docker.endpoint=unix:///var/run/docker.sock
     ports:
       - "80:80"
@@ -25,6 +26,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.auth.rule=PathPrefix(`/auth`)
+      - traefik.http.routers.auth.entrypoints=web
       - traefik.http.services.auth.loadbalancer.server.port=3000
       - traefik.http.middlewares.auth-strip.stripprefix.prefixes=/auth
       - traefik.http.routers.auth.middlewares=auth-strip
@@ -37,9 +39,11 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.customers.rule=PathPrefix(`/customers`)
-      - traefik.http.services.customers.loadbalancer.server.port=3000
+      - traefik.http.routers.customers.entrypoints=web
+      - traefik.http.routers.customers.middlewares=customers-strip,default-headers
       - traefik.http.middlewares.customers-strip.stripprefix.prefixes=/customers
-      - traefik.http.routers.customers.middlewares=customers-strip
+      - traefik.http.middlewares.default-headers.headers.customresponseheaders.X-Platform=API-Gateway-Operations-Lab
+      - traefik.http.services.customers.loadbalancer.server.port=3000
     networks:
       - app-net
 
@@ -49,9 +53,12 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.payments.rule=PathPrefix(`/payments`)
-      - traefik.http.services.payments.loadbalancer.server.port=3000
+      - traefik.http.routers.payments.entrypoints=web
       - traefik.http.middlewares.payments-strip.stripprefix.prefixes=/payments
-      - traefik.http.routers.payments.middlewares=payments-strip
+      - traefik.http.routers.payments.middlewares=payments-strip,payments-ratelimit
+      - traefik.http.middlewares.payments-ratelimit.ratelimit.average=5
+      - traefik.http.middlewares.payments-ratelimit.ratelimit.burst=10
+      - traefik.http.services.payments.loadbalancer.server.port=3000
     networks:
       - app-net
 
@@ -71,6 +78,7 @@ services:
 
 networks:
   app-net:
+
 
 volumes:
   postgres_data:
