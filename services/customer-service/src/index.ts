@@ -1,10 +1,10 @@
 import Fastify from "fastify";
-import customerRoutes from "./routes/routes.js";
+import customerRoutes from "./routes/customers.js";
 
 const app = Fastify({ logger: true });
 
 app.get("/health", async () => {
-  return { status: "ok", service: "auth-service" };
+  return { status: "ok", service: "customer-service" };
 });
 
 app.register(customerRoutes);

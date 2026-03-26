@@ -11,13 +11,33 @@ export default async function authRoutes(app: FastifyInstance) {
             });
         }
 
-        return {
-            token: "demo-jwt-token",
-            user: {
-                id: "u-1",
-                username: body.username,
-                role: "admin",
-            },
-        };
+        if (body.username === "admin" && body.password === "secret") {
+            return {
+                accessToken: "demo-admin-token",
+                tokenType: "Bearer",
+                user: {
+                    id: "u-1",
+                    username: "admin",
+                    role: "admin",
+                },
+            };
+        }
+
+        if (body.username === "user" && body.password === "secret") {
+            return {
+                accessToken: "demo-user-token",
+                tokenType: "Bearer",
+                user: {
+                    id: "u-2",
+                    username: "user",
+                    role: "user",
+                },
+            };
+        }
+
+        return reply.status(401).send({
+            error: "Unauthorized",
+            message: "invalid credentials",
+        });
     });
 }

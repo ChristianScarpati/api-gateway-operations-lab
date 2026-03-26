@@ -22,7 +22,7 @@ app.setNotFoundHandler((request, reply) => {
   reply.status(404).send({
     error: "Not Found",
     message: `route ${request.method} ${request.url} not found`,
-    service: "payment-service"
+    service: "payments-service"
   });
 });
 
