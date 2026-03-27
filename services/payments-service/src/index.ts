@@ -1,10 +1,40 @@
 import Fastify from "fastify";
 import paymentRoutes from "./routes/payments.js";
+import client from "prom-client";
 
 const app = Fastify({ logger: true });
 
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });
+
+const httpRequests = new client.Counter({
+  name: "app_http_requests_total",
+  help: "Total number of HTTP requests",
+  labelNames: ["service", "method", "route", "statusCode"] as const,
+});
+
+register.registerMetric(httpRequests);
+
+app.addHook("onResponse", async (request, reply) => {
+  httpRequests.inc({
+    service: "payments-service",
+    method: request.method,
+    route: request.routeOptions.url || request.url,
+    statusCode: String(reply.statusCode),
+  });
+});
+
+app.get("/metrics", async (_request, reply) => {
+  reply.header("Content-Type", register.contentType);
+  return register.metrics();
+});
+
 app.get("/health", async () => {
   return { status: "ok", service: "payments-service" };
+});
+
+app.get("/ready", async () => {
+  return { status: "ready", service: "payments-service" };
 });
 
 app.register(paymentRoutes);
